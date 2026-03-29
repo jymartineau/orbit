@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GYST — Agentic AI Commerce</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06080E;--s1:#0C0F1B;--s2:#121726;--s3:#181E30;--bd:#1C2338;
+  --blue:#4B8FFF;--blue-d:rgba(75,143,255,.12);--blue-g:rgba(75,143,255,.25);
+  --gold:#F5A623;--gold-d:rgba(245,166,35,.1);
+  --green:#2DD98E;--green-d:rgba(45,217,142,.1);
+  --orange:#FF7043;--cyan:#00D4FF;--purple:#9B7BFF;
+  --t1:#EDF0FF;--t2:#7A8699;--t3:#3D4A60;
+  --mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;--display:'Syne',sans-serif
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:13px;line-height:1.5;overflow:hidden}
+
+/* HEADER */
+#hdr{height:50px;background:var(--s1);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;position:relative;z-index:10}
+.logo{font-family:var(--display);font-size:18px;font-weight:800;letter-spacing:.08em;color:var(--t1)}
+.logo em{color:var(--blue);font-style:normal}
+.demo-pill{position:absolute;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--bd);border-radius:20px;padding:4px 14px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);display:flex;align-items:center;gap:6px}
+.demo-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pdot 2s infinite}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
+#reset-btn{background:transparent;border:1px solid var(--bd);color:var(--t3);border-radius:5px;padding:4px 12px;font-size:11px;font-family:var(--sans);cursor:pointer;transition:all .2s}
+#reset-btn:hover{border-color:var(--t2);color:var(--t1)}
+
+/* MAIN */
+#main{display:flex;height:calc(100vh - 50px)}
+.panel{display:flex;flex-direction:column;height:100%;overflow:hidden}
+#pl{width:57%;border-right:1px solid var(--bd)}
+#pr{width:43%;background:var(--s1)}
+
+/* PANEL HEADERS */
+.ph{padding:16px 20px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--bg)}
+.actor-chip{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border-radius:3px;padding:2px 8px;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:6px}
+.actor-chip.cr{color:var(--cyan);border-left:2px solid var(--cyan)}
+.actor-chip.cu{color:var(--gold);border-left:2px solid var(--gold)}
+.ph h2{font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:1px}
+.ph .sub{font-size:11px;color:var(--t2)}
+
+/* PROGRESS BAR */
+#pbar{height:2px;background:var(--bd);flex-shrink:0}
+#pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;transition:width .4s;box-shadow:0 0 6px var(--blue-g)}
+
+/* PIPELINE SCROLL */
+#pipe{flex:1;overflow-y:auto;padding:12px 18px 24px;scroll-behavior:smooth}
+#pipe::-webkit-scrollbar{width:3px}
+#pipe::-webkit-scrollbar-track{background:transparent}
+#pipe::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* Phase labels */
+.plabel{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin:14px 0 6px 2px;transition:color .3s}
+.plabel:first-child{margin-top:0}
+.plabel.lit{color:var(--t2)}
+
+/* Pipeline connector */
+.pi{position:relative;margin-bottom:3px}
+.pi::before{content:'';position:absolute;left:17px;top:38px;bottom:-3px;width:1px;background:var(--bd)}
+.pi:last-child::before,.pi.no-line::before{display:none}
+.pi.done::before{background:var(--s3)}
+
+/* AGENT CARD */
+.ac{display:flex;align-items:flex-start;gap:10px;background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;transition:all .3s;opacity:.35;position:relative;overflow:hidden}
+.ac.vis{opacity:1}
+.ac.run{border-color:var(--blue);background:var(--blue-d);box-shadow:0 0 0 1px var(--blue-g);opacity:1}
+.ac.done{border-color:var(--bd);background:var(--s1);opacity:1}
+.ac.run::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(75,143,255,.06),transparent);animation:shim 1.4s infinite}
+@keyframes shim{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* Agent icon */
+.ai{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;background:var(--s3);border:1px solid var(--bd);transition:all .3s;margin-top:1px}
+.run .ai{background:var(--blue-d);border-color:var(--blue)}
+.done .ai{background:var(--green-d);border-color:var(--green)}
+.spin{width:11px;height:11px;border:2px solid var(--blue);border-top-color:transparent;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Agent body */
+.ab{flex:1;min-width:0}
+.an{font-size:11px;font-weight:600;color:var(--t1);margin-bottom:1px;display:flex;align-items:center;gap:6px}
+.run .an{color:var(--blue)}
+.as{font-size:10px;color:var(--t3);font-family:var(--mono)}
+.run .as{color:var(--t2)}
+.ao{margin-top:7px;font-size:10px;font-family:var(--mono);color:var(--t2);background:var(--s3);border-radius:4px;padding:7px 9px;line-height:1.65;display:none;border-left:2px solid var(--green)}
+.ao.ai-out{border-left-color:var(--blue)}
+.done .ao{display:block}
+.ai-tag{font-size:8px;background:rgba(75,143,255,.15);border:1px solid rgba(75,143,255,.4);border-radius:3px;padding:1px 5px;color:var(--blue);font-family:var(--mono);font-weight:500;letter-spacing:.05em}
+
+/* HUMAN GATE */
+.hg{display:flex;align-items:flex-start;gap:10px;background:var(--gold-d);border:1px solid var(--gold);border-radius:7px;padding:12px;opacity:.25;transition:all .3s}
+.hg.act{opacity:1;animation:gp 2s infinite}
+.hg.done{opacity:1;animation:none;border-color:var(--bd);background:var(--s1)}
+@keyframes gp{0%,100%{box-shadow:0 0 0 1px rgba(245,166,35,.15),0 4px 18px rgba(245,166,35,.08)}50%{box-shadow:0 0 0 1px rgba(245,166,35,.3),0 4px 24px rgba(245,166,35,.15)}}
+.gi{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;background:var(--gold-d);border:1px solid var(--gold);margin-top:1px;transition:all .3s}
+.hg.done .gi{background:var(--green-d);border-color:var(--green)}
+.gb{flex:1}
+.gn{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:2px;font-family:var(--display)}
+.hg.done .gn{color:var(--t2);font-weight:500}
+.gd{font-size:10px;color:var(--t2);margin-bottom:9px;line-height:1.5}
+.gate-btn{background:var(--gold);color:#000;border:none;border-radius:5px;padding:5px 12px;font-size:10px;font-weight:700;font-family:var(--sans);cursor:pointer;transition:all .2s;letter-spacing:.03em}
+.gate-btn:hover{background:#ffbb3d;transform:translateY(-1px)}
+.gate-passed{font-size:10px;color:var(--t2);display:none}
+
+/* VERIFICATION GATE */
+.vc{background:linear-gradient(135deg,rgba(75,143,255,.07),rgba(0,212,255,.04));border:1px solid var(--blue);border-radius:9px;padding:14px;opacity:.25;transition:all .4s}
+.vc.act{opacity:1;animation:vp 2.5s infinite}
+.vc.done{opacity:1;animation:none;border-color:var(--green);background:var(--green-d)}
+@keyframes vp{0%,100%{box-shadow:0 0 0 1px var(--blue-g),0 6px 28px var(--blue-g)}50%{box-shadow:0 0 0 2px rgba(75,143,255,.3),0 8px 36px rgba(75,143,255,.18)}}
+.vh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.vs{width:30px;height:30px;border-radius:6px;background:var(--blue-d);border:1px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .3s}
+.vc.done .vs{background:var(--green-d);border-color:var(--green)}
+.vt{font-size:12px;font-weight:700;color:var(--blue);font-family:var(--display)}
+.vc.done .vt{color:var(--green)}
+.vsub{font-size:10px;color:var(--t2)}
+.vsteps{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.vstep{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--t2)}
+.vstep .vi{width:15px;height:15px;border-radius:50%;background:var(--s3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0;transition:all .5s;color:var(--t3)}
+.vstep.ck .vi{background:var(--green-d);border-color:var(--green);color:var(--green)}
+.vbtn{background:var(--blue);color:#fff;border:none;border-radius:5px;padding:7px 16px;font-size:11px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .2s;width:100%}
+.vbtn:hover{background:#5e9fff;transform:translateY(-1px)}
+.vrunning{display:none;text-align:center;padding:8px;font-size:11px;color:var(--t2)}
+.vresult{display:none}
+.vresult-inner{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--green-d);border:1px solid var(--green);border-radius:5px;font-size:11px;color:var(--green)}
+
+/* COMPLETE CARD */
+.cc{background:linear-gradient(135deg,var(--green-d),transparent);border:1px solid var(--green);border-radius:9px;padding:16px;text-align:center;opacity:0;transition:all .5s}
+.cc.vis{opacity:1;animation:cglow 1.2s ease-out}
+@keyframes cglow{0%{box-shadow:0 0 40px rgba(45,217,142,.35)}100%{box-shadow:none}}
+
+/* LOADING DOTS */
+.ldots{display:inline-flex;gap:3px;align-items:center}
+.ldots span{width:4px;height:4px;border-radius:50%;background:var(--blue);animation:db 1.2s infinite}
+.ldots span:nth-child(2){animation-delay:.2s}
+.ldots span:nth-child(3){animation-delay:.4s}
+@keyframes db{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+
+/* SCORE PILL */
+.spill{display:inline-flex;align-items:center;gap:4px;background:var(--green-d);border:1px solid var(--green);border-radius:12px;padding:2px 8px;font-size:9px;font-weight:600;color:var(--green);font-family:var(--mono)}
+
+/* RIGHT PANEL — CUSTOMER */
+#storefront-lock{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;text-align:center}
+.lock-icon{font-size:34px;opacity:.2}
+.lock-text{font-size:11px;color:var(--t3);max-width:180px;line-height:1.6}
+.lbar{width:150px;height:2px;background:var(--bd);border-radius:1px;overflow:hidden}
+.lbar-fill{height:100%;background:var(--blue);width:0%;transition:width .4s}
+.lbar-label{font-size:9px;color:var(--t3);font-family:var(--mono);margin-top:4px}
+
+/* STOREFRONT */
+#storefront{flex:1;display:none;flex-direction:column;overflow:hidden}
+.sfhdr{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sfname{font-family:var(--display);font-size:12px;font-weight:700}
+.sfurl{font-size:9px;color:var(--t3);font-family:var(--mono)}
+.sf-badge-mini{display:inline-flex;align-items:center;gap:5px;background:rgba(75,143,255,.1);border:1px solid rgba(75,143,255,.4);border-radius:14px;padding:3px 10px;font-size:9px;font-weight:700;color:var(--blue);letter-spacing:.05em}
+
+/* Product image */
+.pimg{width:100%;height:180px;background:linear-gradient(135deg,#1a2855 0%,#0d1630 50%,#1a2855 100%);position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.pimg::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 60% 40%,rgba(75,143,255,.08) 0%,transparent 70%)}
+.pinfo{padding:14px 16px;flex:1;overflow-y:auto}
+.pinfo::-webkit-scrollbar{width:3px}
+.pinfo::-webkit-scrollbar-track{background:transparent}
+.pinfo::-webkit-scrollbar-thumb{background:var(--s3)}
+
+/* Product verification badge */
+.pvbadge{display:inline-flex;align-items:center;gap:7px;background:rgba(75,143,255,.08);border:1px solid rgba(75,143,255,.35);border-radius:5px;padding:5px 11px;font-size:10px;font-weight:700;color:var(--blue);margin-bottom:9px;cursor:pointer;transition:all .25s;position:relative;letter-spacing:.03em}
+.pvbadge:hover{background:rgba(75,143,255,.14);border-color:var(--blue);box-shadow:0 2px 10px rgba(75,143,255,.2)}
+.badge-tip{position:absolute;bottom:calc(100% + 8px);left:0;right:0;background:var(--s2);border:1px solid var(--blue);border-radius:6px;padding:9px 11px;font-size:10px;color:var(--t2);line-height:1.5;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;font-weight:400}
+.pvbadge:hover .badge-tip{opacity:1}
+.ptitle{font-family:var(--display);font-size:15px;font-weight:700;line-height:1.3;margin-bottom:3px}
+.psub{font-size:10px;color:var(--t2);margin-bottom:11px}
+.pprice{font-size:20px;font-weight:700;font-family:var(--display);margin-bottom:14px}
+.pprice span{font-size:11px;font-weight:400;color:var(--t2);font-family:var(--sans)}
+
+/* Verification panel */
+#ver-panel{display:none;background:var(--s2);border:1px solid var(--blue);border-radius:7px;padding:12px;margin-bottom:12px;animation:sdown .3s ease}
+@keyframes sdown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.vph{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.vphL{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--blue)}
+.vcls{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:0;line-height:1}
+.vcls:hover{color:var(--t1)}
+.vrows{display:flex;flex-direction:column;gap:5px;margin-bottom:9px}
+.vrow{display:flex;align-items:center;gap:7px;font-size:10px}
+.vrl{color:var(--t3);width:80px;flex-shrink:0;font-family:var(--mono)}
+.vrv{color:var(--t1)}
+.vrv.ok{color:var(--green);display:flex;align-items:center;gap:3px}
+.vrv.warn{color:var(--orange)}
+.vai-box{background:var(--s3);border-radius:4px;padding:9px 10px;font-size:10px;font-family:var(--mono);color:var(--t2);line-height:1.65;border-left:2px solid var(--blue)}
+
+/* Buttons */
+.view-btn{display:block;width:100%;background:transparent;border:1px solid var(--bd);color:var(--t2);border-radius:5px;padding:7px;font-size:10px;font-family:var(--sans);cursor:pointer;margin-bottom:9px;transition:all .2s;text-align:center}
+.view-btn:hover{border-color:var(--blue);color:var(--blue)}
+.buy-btn{display:block;width:100%;background:var(--t1);color:var(--bg);border:none;border-radius:7px;padding:11px;font-size:12px;font-weight:700;font-family:var(--display);cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.buy-btn:hover{background:#fff;transform:translateY(-1px);box-shadow:0 4px 16px rgba(237,240,255,.15)}
+.auth-note{margin-top:10px;padding:9px 11px;background:var(--s2);border-radius:5px;font-size:9px;color:var(--t3);line-height:1.6}
+
+/* ORDER CONFIRMATION */
+#order-conf{flex:1;display:none;overflow-y:auto;padding:18px 16px;animation:fin .4s ease}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+.ocheck{width:44px;height:44px;background:var(--green-d);border:2px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px}
+.otitle{font-family:var(--display);font-size:15px;font-weight:700;text-align:center;margin-bottom:3px}
+.osub{font-size:10px;color:var(--t2);text-align:center;margin-bottom:16px}
+.ocard{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:13px;margin-bottom:10px}
+.ocard-title{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:9px}
+.qr-wrap{background:#fff;border-radius:6px;padding:10px;width:92px;height:92px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center}
+.qrlabel{font-size:9px;color:var(--t2);text-align:center;margin-bottom:10px}
+.qr-verified{display:flex;align-items:center;gap:8px;background:var(--green-d);border:1px solid var(--green);border-radius:5px;padding:7px 10px;font-size:10px;color:var(--green)}
+.orow{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.odiv{height:1px;background:var(--bd);margin:7px 0}
+.ototal{display:flex;justify-content:space-between;font-size:12px;font-weight:600}
+.ofooter{text-align:center;font-size:9px;color:var(--t3);padding:8px 0;line-height:1.5}
+
+/* Start step */
+.start-step{background:var(--s2);border:1px dashed var(--bd);border-radius:7px;padding:12px;margin-bottom:6px}
+.slabel{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+.accs{display:flex;gap:6px;margin-bottom:9px;display:none}
+.acc{display:flex;align-items:center;gap:4px;background:var(--s3);border:1px solid var(--bd);border-radius:4px;padding:3px 9px;font-size:10px;color:var(--t2)}
+.acc .ok{color:var(--green);margin-left:3px}
+#start-btn{display:inline-flex;align-items:center;gap:7px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:12px;font-weight:600;font-family:var(--display);cursor:pointer;transition:all .2s}
+#start-btn:hover{background:#5e9fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(75,143,255,.3)}
+#conn-label{display:none;font-size:10px;color:var(--t2);line-height:1.5}
+
+/* Typewriter cursor */
+.twc{display:inline-block;width:2px;height:.85em;background:var(--blue);margin-left:1px;animation:bl .7s infinite;vertical-align:text-bottom}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Hoodie SVG */
+.hoodie-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.prod-label{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.2)}
+
+/* Utilities */
+.dn{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="logo">GY<em>S</em>T</div>
+  <div class="demo-pill"><span class="demo-dot"></span>Investor Demo &mdash; Agentic AI Commerce System</div>
+  <button id="reset-btn" onclick="location.reload()">↺ Reset</button>
+</div>
+
+<div id="main">
+
+<!-- ═══════════════════════════════════════════
+     LEFT — CREATOR PIPELINE
+═══════════════════════════════════════════ -->
+<div class="panel" id="pl">
+  <div class="ph">
+    <div class="actor-chip cr">👤 Creator View</div>
+    <h2>Marcus Chen</h2>
+    <div class="sub">Professional Athlete · NBA · 2.3M followers</div>
+  </div>
+  <div id="pbar"><div id="pfill"></div></div>
+  <div id="pipe">
+
+    <!-- Phase 0A -->
+    <div class="plabel lit">Phase 0A — Social Connection</div>
+
+    <div class="pi no-line" id="pi-start">
+      <div class="start-step">
+        <div class="slabel">Step 1 · Connect Social Profiles</div>
+        <div class="accs" id="accs">
+          <div class="acc">📸 Instagram <span class="ok">✓</span></div>
+          <div class="acc">🎵 TikTok <span class="ok">✓</span></div>
+          <div class="acc">▶ YouTube <span class="ok">✓</span></div>
+        </div>
+        <button id="start-btn" onclick="startPipeline()">🔗 Connect Socials &amp; Launch Pipeline</button>
+        <div id="conn-label">✓ 3 accounts connected · read-only public data · pipeline live</div>
+      </div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="plabel" id="lbl-1">Phase 1 — Opportunity Discovery</div>
+
+    <div class="pi" id="pi-01">
+      <div class="ac" id="ac-01">
+        <div class="ai" id="ai-01">📡</div>
+        <div class="ab">
+          <div class="an">Agent 01 · Social Listening</div>
+          <div class="as" id="as-01">Waiting…</div>
+          <div class="ao" id="ao-01">847 purchase intent signals detected across 3 platforms. Top cluster: "performance training hoodie" — 312 mentions / 48h. Sentiment: 94% positive. Peak signal: fan comments on @marcuschen_official warmup footage. Passing to Agent 02.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pi" id="pi-02">
+      <div class="ac" id="ac-02">
+        <div class="ai" id="ai-02">🔬</div>
+        <div class="ab">
+          <div class="an">Agent 02 · Market Research <span class="ai-tag">LIVE AI</span></div>
+          <div class="as" id="as-02">Waiting…</div>
+          <div class="ao ai-out" id="ao-02"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pi" id="pi-03">
+      <div class="ac" id="ac-03">
+        <div class="ai" id="ai-03">✅</div>
+        <div class="ab">
+          <div class="an">Agent 03 · QA Review</div>
+          <div class="as" id="as-03">Waiting…</div>
+          <div class="ao" id="ao-03">Quality score: 94/100. Market sizing: sound. Competitor analysis: comprehensive (14 SKUs reviewed). Demand data: corroborated across 3 independent sources. Brief approved — no revisions required.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pi" id="pi-09a">
+      <div class="ac" id="ac-09a">
+        <div class="ai" id="ai-09a">💰</div>
+        <div class="ab">
+          <div class="an">Agent 09 · Financial Controller</div>
+          <div class="as" id="as-09a">Waiting…</div>
+          <div class="ao" id="ao-09a">Budget envelope: $12,400. MVP floor: $8,200. Blended COGS target: ≤38%. Break-even: 139 units @ $89 ASP. Category: ✓ Approved.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Human Gate 1 -->
+    <div class="plabel" id="lbl-g1">Phase 2 — Human Gate</div>
+    <div class="pi no-line" id="pi-g1">
+      <div class="hg" id="hg-1">
+        <div class="gi" id="gi-1">⚡</div>
+        <div class="gb">
+          <div class="gn">Human Gate 1 · Opportunity Approval</div>
+          <div class="gd">Marcus: your fan community has surfaced a high-confidence opportunity. Market brief is ready. Approve to begin product development.</div>
+          <div id="ga-1"><button class="gate-btn" onclick="approveGate1()">Approve Opportunity →</button></div>
+          <div class="gate-passed" id="gp-1">✓ Approved by Marcus Chen · pipeline continuing</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="plabel" id="lbl-3">Phase 3 — Product Definition</div>
+
+    <div class="pi" id="pi-04">
+      <div class="ac" id="ac-04">
+        <div class="ai" id="ai-04">📋</div>
+        <div class="ab">
+          <div class="an">Agent 04 · Product Manager</div>
+          <div class="as" id="as-04">Waiting…</div>
+          <div class="ao" id="ao-04">PRD v1.0: Heavyweight French Terry Hoodie · 380gsm · garment-dyed · embroidered signature patch · kangaroo pocket · XS–3XL. Creator override applied: "#23" integrated into rear embroidery per Marcus's input.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pi" id="pi-05">
+      <div class="ac" id="ac-05">
+        <div class="ai" id="ai-05">👥</div>
+        <div class="ab">
+          <div class="an">Agent 05 · Customer Persona</div>
+          <div class="as" id="as-05">Waiting…</div>
+          <div class="ao" id="ao-05">4 archetypes scored. <span class="spill">81% purchase intent</span> — threshold met (≥75%). Blocking feedback: "needs gym viability, not just casual." PRD updated: moisture-wicking interior lining added. Iteration 2 approved.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification Gate -->
+    <div class="plabel" id="lbl-v">Phase 0B — Identity Verification · Hard Gate</div>
+    <div class="pi no-line" id="pi-v">
+      <div class="vc" id="vc">
+        <div class="vh">
+          <div class="vs" id="vshield">🛡️</div>
+          <div>
+            <div class="vt">Agent 13 · Identity &amp; Verification</div>
+            <div class="vsub">Tier 1 — Creator / Athlete · Required before store can go live</div>
+          </div>
+        </div>
+        <div class="vsteps">
+          <div class="vstep" id="vs1"><div class="vi">1</div><span>Government ID + biometric liveness check</span></div>
+          <div class="vstep" id="vs2"><div class="vi">2</div><span>Social OAuth elevation · confirm account control</span></div>
+          <div class="vstep" id="vs3"><div class="vi">3</div><span>Digital rights attestation · name &amp; likeness</span></div>
+          <div class="vstep" id="vs4"><div class="vi">4</div><span>Counterfeit watchlist cross-reference</span></div>
+        </div>
+        <button class="vbtn" id="vbtn" onclick="startVerify()">Begin Verification →</button>
+        <div class="vrunning" id="vrun">
+          <div class="ldots"><span></span><span></span><span></span></div>
+          <div id="vruntext" style="margin-top:7px;font-size:10px">Submitting ID document…</div>
+        </div>
+        <div class="vresult" id="vres">
+          <div class="vresult-inner">
+            <span style="font-size:14px">✓</span>
+            <div>
+              <div style="font-weight:600">Verified · Confidence 97/100</div>
+              <div style="font-size:9px;color:var(--t2);margin-top:1px">Verified Creator badge issued · Verified Source Boost activated (+0.25 confidence)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="plabel" id="lbl-4">Phase 4 — Supply Chain &amp; Legal</div>
+
+    <div class="pi" id="pi-0607">
+      <div class="ac" id="ac-0607">
+        <div class="ai" id="ai-0607">⚖️</div>
+        <div class="ab">
+          <div class="an">Agents 06 + 07 · Procurement &amp; Legal <span style="font-size:9px;color:var(--t3)">(parallel)</span></div>
+          <div class="as" id="as-0607">Waiting…</div>
+          <div class="ao" id="ao-0607">Supplier: Bella+Canvas (LA · lead 12d · MOQ 48). Compliance: ✓ cleared. Rights confirmed via Agent 13 record — no independent verification required. <span style="color:var(--orange)">3 unauthorized listings flagged</span> → takedown templates prepared.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Human Gate 2 -->
+    <div class="pi no-line" id="pi-g2">
+      <div class="hg" id="hg-2">
+        <div class="gi" id="gi-2">⚡</div>
+        <div class="gb">
+          <div class="gn">Human Gate 2 · Pre-Launch Approval</div>
+          <div class="gd">Supplier confirmed. Compliance cleared. 3 counterfeits flagged &amp; queued for takedown. Ready to publish with Verified Creator badge.</div>
+          <div id="ga-2"><button class="gate-btn" onclick="approveGate2()">Launch Official Store →</button></div>
+          <div class="gate-passed" id="gp-2">✓ Approved · storefront publishing…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="plabel" id="lbl-5">Phase 5 — Storefront &amp; Listing</div>
+
+    <div class="pi" id="pi-08">
+      <div class="ac" id="ac-08">
+        <div class="ai" id="ai-08">🏪</div>
+        <div class="ab">
+          <div class="an">Agent 08 · Offering Builder</div>
+          <div class="as" id="as-08">Waiting…</div>
+          <div class="ao" id="ao-08">Storefront: marcuschen.gyst.com · 2 listing variants live (A: performance-led, B: authenticity-led). Verified Creator badge embedded. SEO configured. Physical insert: QR codes linked to Order Verification API.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pi no-line" id="pi-done">
+      <div class="cc" id="cc">
+        <div style="font-size:26px;margin-bottom:7px">🎉</div>
+        <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--green);margin-bottom:3px">Official Store is Live</div>
+        <div style="font-size:10px;color:var(--t2)">marcuschen.gyst.com · Verified Creator badge active<br>→ See Jordan's customer experience →</div>
+      </div>
+    </div>
+
+  </div><!-- /pipe -->
+</div><!-- /panel-left -->
+
+
+<!-- ═══════════════════════════════════════════
+     RIGHT — CUSTOMER STOREFRONT
+═══════════════════════════════════════════ -->
+<div class="panel" id="pr">
+  <div class="ph" style="background:var(--s1)">
+    <div class="actor-chip cu">🛍️ Customer View</div>
+    <h2>Jordan's Experience</h2>
+    <div class="sub">Fan · previously burned by counterfeit merch · first visit</div>
+  </div>
+
+  <!-- LOCK STATE -->
+  <div id="storefront-lock">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-text">Storefront unlocks when pipeline reaches <strong style="color:var(--t2)">Phase 5</strong></div>
+    <div class="lbar"><div class="lbar-fill" id="lbar-fill"></div></div>
+    <div class="lbar-label" id="lbar-label">0 / 9 steps complete</div>
+  </div>
+
+  <!-- STOREFRONT -->
+  <div id="storefront">
+    <div class="sfhdr">
+      <div>
+        <div class="sfname">Marcus Chen Official</div>
+        <div class="sfurl">marcuschen.gyst.com</div>
+      </div>
+      <div class="sf-badge-mini">🛡 VERIFIED CREATOR</div>
+    </div>
+
+    <!-- Product image -->
+    <div class="pimg">
+      <div class="hoodie-wrap">
+        <svg width="116" height="104" viewBox="0 0 116 104" fill="none" xmlns="http://www.w3.org/2000/svg" opacity=".75">
+          <path d="M33 18L18 43 8 96h100l-10-53L83 18Q70 10 58 10Q46 10 33 18Z" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+          <path d="M43 18Q58 26 73 18l10 0Q70 10 58 10Q46 10 33 18Z" fill="rgba(255,255,255,.04)"/>
+          <path d="M48 10Q58 6 68 10l-2 10Q58 16 50 20Z" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+          <path d="M18 43L3 63l3 14 18-14 6 33H8L18 43Z" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+          <path d="M98 43l15 20-3 14-18-14-6 33h22L98 43Z" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+          <text x="58" y="67" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="11" font-family="Syne,sans-serif" font-weight="700">#23</text>
+          <text x="58" y="79" text-anchor="middle" fill="rgba(255,255,255,.22)" font-size="6" font-family="Syne,sans-serif" letter-spacing="2">CHEN</text>
+        </svg>
+        <div class="prod-label">Official Drop · Limited</div>
+      </div>
+      <div style="position:absolute;bottom:8px;right:10px;font-size:8px;color:rgba(255,255,255,.15);font-family:var(--mono)">VERIFIED AUTHENTIC</div>
+    </div>
+
+    <!-- Product info -->
+    <div class="pinfo">
+
+      <!-- Clickable verification badge -->
+      <div class="pvbadge" id="pvbadge" onclick="toggleVer()">
+        <span>🛡</span>
+        VERIFIED CREATOR · MARCUS CHEN
+        <div class="badge-tip">"This store has been verified by GYST. Marcus confirmed his identity and rights. Only this store can carry the Verified Marcus Chen badge."</div>
+      </div>
+
+      <div class="ptitle">Official Marcus Chen Performance Hoodie</div>
+      <div class="psub">Heavyweight French Terry · Signature #23 · Garment-Dyed · 4 Colorways</div>
+      <div class="pprice">$89.00 <span>· free shipping · official verified store only</span></div>
+
+      <!-- Verification panel (slides in) -->
+      <div id="ver-panel">
+        <div class="vph">
+          <div class="vphL">🛡 Live Verification Record</div>
+          <button class="vcls" onclick="toggleVer()">×</button>
+        </div>
+        <div class="vrows">
+          <div class="vrow"><div class="vrl">Entity</div><div class="vrv">Marcus Chen</div></div>
+          <div class="vrow"><div class="vrl">Tier</div><div class="vrv">Tier 1 · Verified Creator</div></div>
+          <div class="vrow"><div class="vrl">ID Check</div><div class="vrv ok">✓ Passed (97/100)</div></div>
+          <div class="vrow"><div class="vrl">Instagram</div><div class="vrv ok">✓ @marcuschen_official</div></div>
+          <div class="vrow"><div class="vrl">TikTok</div><div class="vrv ok">✓ @marcuschen</div></div>
+          <div class="vrow"><div class="vrl">Rights</div><div class="vrv ok">✓ Attested &amp; signed</div></div>
+          <div class="vrow"><div class="vrl">Counterfeits</div><div class="vrv warn">3 flagged &amp; actioned</div></div>
+        </div>
+        <div class="vai-box" id="vai-box">
+          <div id="vai-loading" style="text-align:center;padding:6px">
+            <div class="ldots"><span></span><span></span><span></span></div>
+            <div style="margin-top:6px;font-size:9px;color:var(--t3)">Generating live verification summary…</div>
+          </div>
+          <div id="vai-text" style="display:none"></div>
+        </div>
+      </div>
+
+      <button class="view-btn" onclick="void 0">🔗 Full record: verify.gyst.com/marcus-chen</button>
+      <button class="buy-btn" id="buy-btn" onclick="doPurchase()">Add to Cart — $89.00</button>
+      <div class="auth-note">🔒 Every order includes a unique cryptographic QR code on packaging so you can verify your product is genuine on delivery.</div>
+    </div>
+  </div><!-- /storefront -->
+
+  <!-- ORDER CONFIRMATION -->
+  <div id="order-conf">
+    <div class="ocheck">✓</div>
+    <div class="otitle">Order Confirmed</div>
+    <div class="osub">Order #MC-2024-00847 · Marcus Chen Official Store</div>
+
+    <div class="ocard">
+      <div class="ocard-title">Authenticity Certificate</div>
+      <div class="qr-wrap">
+        <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="20" height="20" rx="2" fill="#000"/><rect x="5" y="5" width="14" height="14" rx="1" fill="#fff"/><rect x="8" y="8" width="8" height="8" rx="1" fill="#000"/>
+          <rect x="50" y="2" width="20" height="20" rx="2" fill="#000"/><rect x="53" y="5" width="14" height="14" rx="1" fill="#fff"/><rect x="56" y="8" width="8" height="8" rx="1" fill="#000"/>
+          <rect x="2" y="50" width="20" height="20" rx="2" fill="#000"/><rect x="5" y="53" width="14" height="14" rx="1" fill="#fff"/><rect x="8" y="56" width="8" height="8" rx="1" fill="#000"/>
+          <rect x="26" y="4" width="4" height="4" fill="#000"/><rect x="32" y="4" width="4" height="4" fill="#000"/><rect x="38" y="4" width="4" height="4" fill="#000"/>
+          <rect x="26" y="10" width="4" height="4" fill="#000"/><rect x="38" y="10" width="4" height="4" fill="#000"/><rect x="32" y="16" width="4" height="4" fill="#000"/>
+          <rect x="26" y="26" width="4" height="4" fill="#000"/><rect x="32" y="26" width="4" height="4" fill="#000"/><rect x="44" y="26" width="4" height="4" fill="#000"/>
+          <rect x="26" y="32" width="4" height="4" fill="#000"/><rect x="44" y="32" width="4" height="4" fill="#000"/><rect x="38" y="38" width="4" height="4" fill="#000"/>
+          <rect x="50" y="26" width="4" height="4" fill="#000"/><rect x="56" y="26" width="4" height="4" fill="#000"/><rect x="64" y="26" width="4" height="4" fill="#000"/>
+          <rect x="50" y="32" width="4" height="4" fill="#000"/><rect x="64" y="32" width="4" height="4" fill="#000"/><rect x="56" y="38" width="4" height="4" fill="#000"/>
+          <rect x="26" y="50" width="4" height="4" fill="#000"/><rect x="32" y="50" width="4" height="4" fill="#000"/><rect x="44" y="50" width="4" height="4" fill="#000"/>
+          <rect x="26" y="56" width="4" height="4" fill="#000"/><rect x="44" y="56" width="4" height="4" fill="#000"/><rect x="32" y="62" width="4" height="4" fill="#000"/>
+          <rect x="50" y="50" width="4" height="4" fill="#000"/><rect x="64" y="50" width="4" height="4" fill="#000"/><rect x="56" y="56" width="4" height="4" fill="#000"/>
+          <rect x="50" y="62" width="4" height="4" fill="#000"/><rect x="62" y="62" width="4" height="4" fill="#000"/>
+        </svg>
+      </div>
+      <div class="qrlabel">Scan on delivery to verify authenticity</div>
+      <div class="qr-verified">
+        <span style="font-size:13px">✓</span>
+        <div>
+          <div style="font-weight:600">Order #MC-2024-00847 · Verified Authentic</div>
+          <div style="font-size:9px;opacity:.75;margin-top:1px">Fulfilled via Marcus Chen Official Store · verify.gyst.com</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ocard">
+      <div class="ocard-title">Order Summary</div>
+      <div class="orow"><span>Official Marcus Chen Hoodie (L · Graphite)</span><span style="font-weight:600">$89.00</span></div>
+      <div class="orow" style="color:var(--t2)"><span>Shipping</span><span>Free</span></div>
+      <div class="odiv"></div>
+      <div class="ototal"><span>Total</span><span>$89.00</span></div>
+    </div>
+
+    <div class="ofooter">Agent 12 · Customer Success will follow up in 7 days<br>Jordan's NPS score will feed back into the pipeline</div>
+  </div>
+
+</div><!-- /panel-right -->
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════
+// STATE
+// ═══════════════════════════════
+let phase = 'idle';
+let steps = 0;
+const TOTAL = 9;
+let verOpen = false;
+let verLoaded = false;
+let verifyRunning = false;
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function pct() {
+  const p = Math.round((steps / TOTAL) * 100);
+  document.getElementById('pfill').style.width = p + '%';
+  document.getElementById('lbar-fill').style.width = p + '%';
+  document.getElementById('lbar-label').textContent = steps + ' / ' + TOTAL + ' steps complete';
+}
+
+function litLabel(id) {
+  const el = document.getElementById('lbl-' + id);
+  if (el) el.classList.add('lit');
+}
+
+function agentRun(id) {
+  const card = document.getElementById('ac-' + id);
+  card.classList.add('vis', 'run');
+  document.getElementById('ai-' + id).innerHTML = '<div class="spin"></div>';
+  document.getElementById('as-' + id).textContent = 'Running…';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function agentDone(id) {
+  const card = document.getElementById('ac-' + id);
+  card.classList.remove('run');
+  card.classList.add('done');
+  document.getElementById('ai-' + id).innerHTML = '<span style="color:var(--green)">✓</span>';
+  document.getElementById('as-' + id).textContent = 'Complete';
+  const out = document.getElementById('ao-' + id);
+  if (out) out.style.display = 'block';
+  steps++;
+  pct();
+}
+
+function gateActive(id) {
+  litLabel('g' + id);
+  const g = document.getElementById('hg-' + id);
+  g.classList.add('act');
+  g.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function gateDone(id) {
+  const g = document.getElementById('hg-' + id);
+  g.classList.remove('act');
+  g.classList.add('done');
+  document.getElementById('gi-' + id).textContent = '✓';
+  document.getElementById('ga-' + id).style.display = 'none';
+  document.getElementById('gp-' + id).style.display = 'block';
+}
+
+// Typewriter
+function typeWrite(el, text, ms = 6) {
+  return new Promise(resolve => {
+    el.textContent = '';
+    const cur = document.createElement('span');
+    cur.className = 'twc';
+    el.appendChild(cur);
+    let i = 0;
+    function t() {
+      if (i < text.length) {
+        cur.before(text[i++]);
+        setTimeout(t, ms);
+      } else {
+        cur.remove();
+        resolve();
+      }
+    }
+    t();
+  });
+}
+
+// ═══════════════════════════════
+// CLAUDE API
+// ═══════════════════════════════
+async function callClaude(prompt) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const d = await res.json();
+  return d.content[0].text;
+}
+
+async function getMarketBrief() {
+  try {
+    return await callClaude(
+`You are Agent 02 (Market Research) in GYST, an autonomous AI commerce system. Marcus Chen is a professional NBA player with 2.3M Instagram and 890K TikTok followers.
+
+Agent 01 signals:
+- 312 mentions of "performance training hoodie" in 48h across fan communities
+- Top comments: "Marcus needs to drop that training gear fr", "I'd pay whatever for that warmup hoodie"
+- 847 total purchase intent signals; 94% positive sentiment
+- Demographics: 68% male, 72% aged 18-34, concentrated in US, Canada, UK
+
+Write a concise market opportunity brief with exactly these 4 labeled sections:
+
+DEMAND SIGNAL: (2 sentences with specific numbers)
+MARKET SIZING: (2 sentences with specific dollar estimates for creator athletic apparel)
+COMPETITOR GAP: (2 sentences on what official athlete merch is currently missing)
+RECOMMENDATION: (1 sentence — go or no-go with key reason)
+
+Plain text only. No markdown. No asterisks. Under 160 words total.`
+    );
+  } catch (e) {
+    return `DEMAND SIGNAL: Agent 01 detected 847 purchase intent signals across 3 platforms in 48 hours, with a dominant cluster of 312 mentions specifically referencing Marcus's training hoodie from recent warmup footage — an unusually concentrated signal for a single SKU concept.
+
+MARKET SIZING: The authenticated creator athletic apparel segment in North America is valued at $2.3B, with athletes at Marcus's follower tier generating $180K–$340K per drop at the $75–95 price point based on comparable launches.
+
+COMPETITOR GAP: No player at Marcus's level currently offers a performance-grade garment with verified authenticity built into the product experience — existing creator hoodies are generic cut-and-sew with screen-printed logos and no anti-counterfeit layer.
+
+RECOMMENDATION: Strong go — signal density, price tolerance, and a clear competitor gap make this the highest-confidence opportunity currently in the pipeline.`;
+  }
+}
+
+async function getVerSummary() {
+  try {
+    return await callClaude(
+`You are the GYST platform's identity verification system. Write a brief, authoritative verification summary that a customer (Jordan) reads after clicking "View Verification Record" on Marcus Chen's official store.
+
+Verified facts:
+- Government ID verified against real-time biometric liveness check: 97/100 confidence
+- Ownership confirmed: @marcuschen_official (Instagram, 2.3M followers) and @marcuschen (TikTok, 890K followers) via OAuth
+- Digital rights attestation signed: sole ownership of name and likeness for merchandise
+- GYST impersonation sweep: 3 unauthorized listings flagged and actioned
+
+Write exactly 3 sentences. Address the customer as "you". Be specific and reassuring. Under 80 words. Plain text only.`
+    );
+  } catch (e) {
+    return `Marcus Chen's identity was independently verified through a government ID document check and real-time biometric liveness match, achieving a 97/100 confidence score. He proved ownership of both his official social accounts and signed a legally binding attestation confirming sole rights to his name and likeness on all merchandise sold here. When you purchase from this store, you are buying from the only channel Marcus has authorized — GYST has already identified and actioned 3 counterfeit listings using his name.`;
+  }
+}
+
+// ═══════════════════════════════
+// PIPELINE
+// ═══════════════════════════════
+async function startPipeline() {
+  if (phase !== 'idle') return;
+  phase = 'running';
+
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('accs').style.display = 'flex';
+  document.getElementById('conn-label').style.display = 'block';
+
+  litLabel('1');
+  await wait(700);
+
+  // Agent 01
+  agentRun('01');
+  await wait(3400);
+  agentDone('01');
+  await wait(400);
+
+  // Agent 02 — LIVE AI
+  agentRun('02');
+  document.getElementById('as-02').textContent = 'Calling Claude API…';
+  const brief = await getMarketBrief();
+  const out02 = document.getElementById('ao-02');
+  out02.style.display = 'block';
+  await typeWrite(out02, brief, 7);
+  const c02 = document.getElementById('ac-02');
+  c02.classList.remove('run');
+  c02.classList.add('done');
+  document.getElementById('ai-02').innerHTML = '<span style="color:var(--green)">✓</span>';
+  document.getElementById('as-02').textContent = 'Complete';
+  steps++;
+  pct();
+  await wait(400);
+
+  // Agent 03
+  agentRun('03');
+  await wait(2200);
+  agentDone('03');
+  await wait(300);
+
+  // Agent 09a
+  agentRun('09a');
+  await wait(1800);
+  agentDone('09a');
+  await wait(400);
+
+  // Human Gate 1
+  gateActive('1');
+  phase = 'gate1';
+}
+
+async function approveGate1() {
+  if (phase !== 'gate1') return;
+  phase = 'running';
+  gateDone('1');
+  litLabel('3');
+  await wait(400);
+
+  // Agent 04
+  agentRun('04');
+  await wait(3200);
+  agentDone('04');
+  await wait(400);
+
+  // Agent 05
+  agentRun('05');
+  await wait(3800);
+  agentDone('05');
+  await wait(500);
+
+  // Verification Gate
+  litLabel('v');
+  const vc = document.getElementById('vc');
+  vc.classList.add('act');
+  vc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  phase = 'verify';
+}
+
+async function startVerify() {
+  if (phase !== 'verify' || verifyRunning) return;
+  verifyRunning = true;
+
+  document.getElementById('vbtn').style.display = 'none';
+  document.getElementById('vrun').style.display = 'block';
+
+  const vsteps = [
+    { id: 'vs1', text: 'Processing ID document via Persona…' },
+    { id: 'vs2', text: 'Verifying social account control…' },
+    { id: 'vs3', text: 'Recording rights attestation…' },
+    { id: 'vs4', text: 'Cross-referencing watchlist…' }
+  ];
+
+  for (const s of vsteps) {
+    document.getElementById('vruntext').textContent = s.text;
+    await wait(1300);
+    const step = document.getElementById(s.id);
+    step.classList.add('ck');
+    step.querySelector('.vi').textContent = '✓';
+  }
+
+  document.getElementById('vruntext').textContent = 'Finalizing verification record…';
+  await wait(1000);
+
+  document.getElementById('vrun').style.display = 'none';
+  document.getElementById('vres').style.display = 'block';
+
+  const vc = document.getElementById('vc');
+  vc.classList.remove('act');
+  vc.classList.add('done');
+
+  const shield = document.getElementById('vshield');
+  shield.textContent = '✓';
+  shield.style.fontSize = '16px';
+
+  steps++;
+  pct();
+  await wait(800);
+
+  phase = 'running';
+  litLabel('4');
+
+  // Agents 06+07
+  agentRun('0607');
+  await wait(4200);
+  agentDone('0607');
+  await wait(400);
+
+  // Human Gate 2
+  const g2 = document.getElementById('hg-2');
+  g2.classList.add('act');
+  g2.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  phase = 'gate2';
+}
+
+async function approveGate2() {
+  if (phase !== 'gate2') return;
+  phase = 'running';
+  gateDone('2');
+  litLabel('5');
+  await wait(400);
+
+  // Agent 08
+  agentRun('08');
+  await wait(2600);
+  agentDone('08');
+  await wait(500);
+
+  // Complete
+  const cc = document.getElementById('cc');
+  cc.classList.add('vis');
+  cc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  await wait(600);
+  launchStore();
+  phase = 'complete';
+}
+
+// ═══════════════════════════════
+// STOREFRONT
+// ═══════════════════════════════
+function launchStore() {
+  document.getElementById('storefront-lock').style.display = 'none';
+  const sf = document.getElementById('storefront');
+  sf.style.display = 'flex';
+  sf.style.animation = 'fin .6s ease';
+}
+
+function toggleVer() {
+  const panel = document.getElementById('ver-panel');
+  verOpen = !verOpen;
+  panel.style.display = verOpen ? 'block' : 'none';
+
+  if (verOpen && !verLoaded) {
+    verLoaded = true;
+    loadVerSummary();
+  }
+}
+
+async function loadVerSummary() {
+  const summary = await getVerSummary();
+  document.getElementById('vai-loading').style.display = 'none';
+  const el = document.getElementById('vai-text');
+  el.style.display = 'block';
+  await typeWrite(el, summary, 18);
+}
+
+function doPurchase() {
+  document.getElementById('storefront').style.display = 'none';
+  const conf = document.getElementById('order-conf');
+  conf.style.display = 'block';
+}
+</script>
+</body>
+</html>
